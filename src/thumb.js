@@ -1,4 +1,16 @@
 /*
+  Override the following values with your own if you want to change the global
+  constants for each touchEventType.
+*/
+// The duration (in ms) before the long tap (or click) event's listener is
+// fired.
+var LONG_TAP_DURATION = 300;
+// The amount of movement allowed around the touch point when executing a long
+// press (or click) event. This is a pseudo-distance metric (similar, but not
+// identical to the Euclidean distance metric).
+var LONG_TAP_MOVE_THRESHOLD = 20;
+
+/*
   Creates the required EventListener(s) to deal with a custom touch event type.
   Parameters:
   touchEventType
@@ -40,13 +52,100 @@ EventTarget.prototype.addTouchEventListener = function(touchEventType, touchEven
     // Long tap event handling
     case 'longtap':
     case 'press':
+      this.longTapTimeoutId = 0;
+
       // Touch events are natively supported, no simulation required
       if ('ontouchstart' in document.documentElement){
-
+        function longTapMoveHandler(e){
+          e.preventDefault();
+          for(var i = 0; i < e.changedTouches.length; i ++)
+            if (e.changedTouches[i].identifier == this.longTapTouch.identifier)
+              if(Math.abs(e.changedTouches[i].clientX - this.longTapStartX) + Math.abs(e.changedTouches[i].clientY - this.longTapStartY) > LONG_TAP_MOVE_THRESHOLD){
+                this.removeEventListener('touchmove',longTapMoveHandler);
+                clearTimeout(this.longTapTimeoutId);
+              }
+        }
+        function longTapHandler(e){
+          e.preventDefault();
+          this.removeEventListener('touchmove',longTapMoveHandler);
+          clearTimeout(this.longTapTimeoutId);
+          touchEventHandler({
+            target: e.target,
+            type: e.type,
+            bubbles: e.bubbles,
+            cancelable: e.cancelable,
+            view: e.view,
+            detail: e.detail,
+            screenX: e.changedTouches[0].screenX,
+            screenY: e.changedTouches[0].screenY,
+            clientX: e.changedTouches[0].clientX,
+            clientY: e.changedTouches[0].clientY
+          });
+        }
+        this.addEventListener('touchstart', function(e){
+          e.preventDefault();
+          this.longTapTouch = {
+            identifier: e.changedTouches[0].identifier,
+            clientX: e.changedTouches[0].clientX,
+            clientY: e.changedTouches[0].clientY
+          };
+          this.longTapStartX = this.longTapTouch.clientX;
+          this.longTapStartY = this.longTapTouch.clientY;
+          this.longTapTimeoutId = setTimeout(function(){
+            longTapHandler(e);
+          }, LONG_TAP_DURATION);
+          this.addEventListener('touchmove', longTapMoveHandler);
+        });
+        this.addEventListener('touchend', function(e){
+          e.preventDefault();
+          for(var i = 0; i < e.changedTouches.length; i ++)
+            if (e.changedTouches[i].identifier == this.longTapTouch.identifier){
+              this.removeEventListener('touchmove',longTapMoveHandler);
+              clearTimeout(this.longTapTimeoutId);
+            }
+        });
+        this.addEventListener('touchleave', function(e){
+          e.preventDefault();
+          for(var i = 0; i < e.changedTouches.length; i ++)
+            if (e.changedTouches[i].identifier == this.longTapTouch.identifier){
+              this.removeEventListener('touchmove',longTapMoveHandler);
+              clearTimeout(this.longTapTimeoutId);
+            }
+        });
+        this.addEventListener('touchcancel', function(e){
+          e.preventDefault();
+          for(var i = 0; i < e.changedTouches.length; i ++)
+            if (e.changedTouches[i].identifier == this.longTapTouch.identifier){
+              this.removeEventListener('touchmove',longTapMoveHandler);
+              clearTimeout(this.longTapTimeoutId);
+            }
+        });
       }
       // Simulated touch event handling
       else {
-
+        function longTapMoveHandler(e){
+          if(Math.abs(e.clientX - this.longTapStartX) + Math.abs(e.clientY - this.longTapStartY) > LONG_TAP_MOVE_THRESHOLD)
+            clearTimeout(this.longTapTimeoutId);
+        }
+        function longTapHandler(e){
+          this.removeEventListener('mousemove',longTapMoveHandler);
+          clearTimeout(this.longTapTimeoutId);
+          touchEventHandler(e);
+        }
+        this.addEventListener('mousedown', function(e){
+          this.longTapStartX = e.clientX;
+          this.longTapStartY = e.clientY;
+          this.longTapTimeoutId = setTimeout(function(){
+            longTapHandler(e);
+          }, LONG_TAP_DURATION);
+          this.addEventListener('mousemove', longTapMoveHandler);
+        });
+        this.addEventListener('mouseup', function(e){
+          clearTimeout(this.longTapTimeoutId);
+        });
+        this.addEventListener('mouseleave', function(e){
+          clearTimeout(this.longTapTimeoutId);
+        });
       }
       break;
     // Pan handling
@@ -156,4 +255,4 @@ EventTarget.prototype.addTouchEventListener = function(touchEventType, touchEven
     default:
       console.log('The value of \'touchEventType\' did not match any of the possible values, no EventListener(s) have been created!')
   }
-}
+};
