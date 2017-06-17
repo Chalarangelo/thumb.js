@@ -1,0 +1,27 @@
+{
+  "name": "thumb.js",
+  "version": "0.0.1",
+  "description": "Modern, performant touch screen gestures",
+  "main": "dist/thumb.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Chalarangelo/thumb.js.git"
+  },
+  "keywords": [
+    "touch",
+    "touchscreen",
+    "gestures",
+    "swipe",
+    "tap",
+    "pan"
+  ],
+  "author": "Angelos Chalaris (chalarangelo@gmail.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Chalarangelo/thumb.js/issues"
+  },
+  "homepage": "https://github.com/Chalarangelo/thumb.js#readme"
+}
