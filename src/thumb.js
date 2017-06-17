@@ -2,14 +2,19 @@
   Override the following values with your own if you want to change the global
   constants for each touchEventType.
 */
-// The duration (in ms) before the long tap (or click) event's listener is
-// fired.
+// The maximum time (in ms) before the tap (or click) event is cancelled.
+var SHORT_TAP_TIMEOUT = 300;
+// The amount of movement allowed around the touch point when executing a tap
+// (or click) event. This is a pseudo-distance metric (similar, but not
+// identical to the Euclidean distance metric).
+var SHORT_TAP_MOVE_THRESHOLD = 20;
+// The minimum duration (in ms) before the long tap (or click) event's listener
+// is fired.
 var LONG_TAP_DURATION = 300;
 // The amount of movement allowed around the touch point when executing a long
-// press (or click) event. This is a pseudo-distance metric (similar, but not
+// tap (or click) event. This is a pseudo-distance metric (similar, but not
 // identical to the Euclidean distance metric).
 var LONG_TAP_MOVE_THRESHOLD = 20;
-
 /*
   Creates the required EventListener(s) to deal with a custom touch event type.
   Parameters:
@@ -53,7 +58,6 @@ EventTarget.prototype.addTouchEventListener = function(touchEventType, touchEven
     case 'longtap':
     case 'press':
       this.longTapTimeoutId = 0;
-
       // Touch events are natively supported, no simulation required
       if ('ontouchstart' in document.documentElement){
         function longTapMoveHandler(e){
@@ -124,15 +128,18 @@ EventTarget.prototype.addTouchEventListener = function(touchEventType, touchEven
       // Simulated touch event handling
       else {
         function longTapMoveHandler(e){
+          e.preventDefault();
           if(Math.abs(e.clientX - this.longTapStartX) + Math.abs(e.clientY - this.longTapStartY) > LONG_TAP_MOVE_THRESHOLD)
             clearTimeout(this.longTapTimeoutId);
         }
         function longTapHandler(e){
+          e.preventDefault();
           this.removeEventListener('mousemove',longTapMoveHandler);
           clearTimeout(this.longTapTimeoutId);
           touchEventHandler(e);
         }
         this.addEventListener('mousedown', function(e){
+          e.preventDefault();
           this.longTapStartX = e.clientX;
           this.longTapStartY = e.clientY;
           this.longTapTimeoutId = setTimeout(function(){
@@ -141,9 +148,11 @@ EventTarget.prototype.addTouchEventListener = function(touchEventType, touchEven
           this.addEventListener('mousemove', longTapMoveHandler);
         });
         this.addEventListener('mouseup', function(e){
+          e.preventDefault();
           clearTimeout(this.longTapTimeoutId);
         });
         this.addEventListener('mouseleave', function(e){
+          e.preventDefault();
           clearTimeout(this.longTapTimeoutId);
         });
       }
